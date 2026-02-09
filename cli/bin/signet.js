@@ -1,13 +1,19 @@
 #!/usr/bin/env node
+import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 import { program } from "commander";
 import { list } from "../src/commands/list.js";
 import { post } from "../src/commands/post.js";
 import { estimate } from "../src/commands/estimate.js";
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(readFileSync(join(__dirname, "../package.json"), "utf-8"));
+
 program
   .name("signet")
   .description("Signet — onchain advertising CLI")
-  .version("0.2.0");
+  .version(pkg.version);
 
 program
   .command("list")
