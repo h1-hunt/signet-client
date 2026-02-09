@@ -1,0 +1,13 @@
+{
+  "name": "signet-x402-example",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "estimate": "node estimate.js",
+    "spotlight": "node spotlight.js"
+  },
+  "dependencies": {
+    "viem": "^2.30.0"
+  }
+}

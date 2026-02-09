@@ -1,0 +1,21 @@
+{
+  "name": "signet-cli",
+  "version": "0.1.0",
+  "description": "CLI for Signet onchain advertising — list and post spotlight ads",
+  "type": "module",
+  "bin": {
+    "signet": "./bin/signet.js"
+  },
+  "scripts": {
+    "start": "node bin/signet.js"
+  },
+  "dependencies": {
+    "commander": "^13.0.0",
+    "viem": "^2.30.0",
+    "@x402/core": "^0.0.7"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
