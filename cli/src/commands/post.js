@@ -59,7 +59,10 @@ export async function post(opts) {
     );
 
     const accepts = paymentRequired.accepts?.[0];
-    console.log(`   Price: $${accepts?.amount} USDC`);
+    const displayAmount = accepts?.amount && BigInt(accepts.amount) > 1000000n
+      ? (Number(accepts.amount) / 1e6).toFixed(6)
+      : accepts?.amount;
+    console.log(`   Price: $${displayAmount} USDC`);
     console.log(`   Pay to: ${accepts?.payTo}`);
     console.log(`   Network: ${accepts?.network}\n`);
 
