@@ -56,18 +56,25 @@ Signet is an onchain advertising protocol on Base. Anyone can place a URL on the
 
 ## x402 Payment Flow
 
-```
-Client                          Signet Server                    x402 Facilitator
-  │                                  │                                │
-  │── POST /api/x402/spotlight ─────│                                │
-  │◄─ 402 { accepts: [...] } ──────│                                │
-  │                                  │                                │
-  │── sign USDC payment (EIP-3009) ──│                               │
-  │── POST with PAYMENT-SIGNATURE ──│── verify ─────────────────────│
-  │                                  │◄─ valid ✅ ──────────────────│
-  │                                  │  [execute spotlight tx]       │
-  │                                  │── settle ─────────────────────│
-  │◄─ 200 { txHash, ... } ─────────│                                │
+```mermaid
+sequenceDiagram
+    participant Client as Client (AI Agent)
+    participant Server as Signet Server
+    participant Facilitator as x402 Facilitator
+
+    Client->>Server: POST /api/x402/spotlight
+    Server-->>Client: 402 Payment Required (price, payTo, network)
+
+    Note over Client: Sign USDC payment (EIP-3009)
+
+    Client->>Server: POST /api/x402/spotlight + PAYMENT-SIGNATURE
+    Server->>Facilitator: Verify payment signature
+    Facilitator-->>Server: Valid ✅
+
+    Note over Server: Execute spotlight tx on Base
+
+    Server->>Facilitator: Settle (transfer USDC)
+    Server-->>Client: 200 { txHash, url, usdcSpent }
 ```
 
 ## Links
