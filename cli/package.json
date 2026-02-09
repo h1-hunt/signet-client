@@ -1,5 +1,5 @@
 {
-  "name": "signet-cli",
+  "name": "@signet-base/cli",
   "version": "0.2.0",
   "description": "CLI for Signet onchain advertising — list and post spotlight ads",
   "type": "module",

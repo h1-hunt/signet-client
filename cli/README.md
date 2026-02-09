@@ -6,16 +6,16 @@ Command-line tool for [Signet](https://signet.sebayaki.com) onchain advertising.
 
 ```bash
 # List recent spotlight signatures
-npx signet-cli list
-npx signet-cli list -n 10
+npx @signet-base/cli list
+npx @signet-base/cli list -n 10
 
 # Estimate spotlight cost
-npx signet-cli estimate
-npx signet-cli estimate --hours 6
+npx @signet-base/cli estimate
+npx @signet-base/cli estimate --hours 6
 
 # Post a URL to spotlight (requires wallet)
-npx signet-cli post --url https://example.com --hours 0
-npx signet-cli post --url https://example.com --private-key 0x...
+npx @signet-base/cli post --url https://example.com --hours 0
+npx @signet-base/cli post --url https://example.com --private-key 0x...
 ```
 
 ## Environment Variables

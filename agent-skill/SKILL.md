@@ -9,20 +9,20 @@ Signet is an onchain advertising protocol on Base (Hunt Town Co-op). URLs compet
 
 ## CLI Tool
 
-Install and use the `signet-cli` tool:
+Install and use the `@signet-base/cli` tool:
 
 ```bash
 # Estimate cost for spotlight placement
-npx signet-cli estimate --hours 6
+npx @signet-base/cli estimate --hours 6
 
 # List recent signatures
-npx signet-cli list --count 10
+npx @signet-base/cli list --count 10
 
 # Post a URL (simulate first to check cost)
-npx signet-cli post --url https://example.com --hours 6 --simulate
+npx @signet-base/cli post --url https://example.com --hours 6 --simulate
 
 # Post for real (requires PRIVATE_KEY env or --private-key)
-PRIVATE_KEY=0x... npx signet-cli post --url https://example.com --hours 6
+PRIVATE_KEY=0x... npx @signet-base/cli post --url https://example.com --hours 6
 ```
 
 ### Commands
