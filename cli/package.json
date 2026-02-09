@@ -1,11 +1,11 @@
 {
   "name": "@signet-base/cli",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "CLI for Signet onchain advertising — list and post spotlight ads",
   "type": "module",
   "bin": {
     "signet": "./bin/signet.js",
-    "signet-cli": "./bin/signet.js"
+    "signet-base": "./bin/signet.js"
   },
   "scripts": {
     "start": "node bin/signet.js",
