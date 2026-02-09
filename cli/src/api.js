@@ -18,26 +18,16 @@ export async function fetchSignatures(startIndex = 0, endIndex = 5, baseUrl = DE
   return res.json();
 }
 
-export async function postSpotlight({ url, guaranteeHours, paymentHeader, baseUrl = DEFAULT_BASE_URL }) {
-  const res = await fetch(`${baseUrl}/api/x402/spotlight`, {
+/**
+ * POST to spotlight endpoint. Returns the raw Response for 402 handling.
+ */
+export async function postSpotlightRaw({ url, guaranteeHours, headers = {}, baseUrl = DEFAULT_BASE_URL }) {
+  return fetch(`${baseUrl}/api/x402/spotlight`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(paymentHeader ? { "PAYMENT-SIGNATURE": paymentHeader } : {}),
+      ...headers,
     },
     body: JSON.stringify({ url, guaranteeHours }),
   });
-
-  // 402 = payment required, return the requirements
-  if (res.status === 402) {
-    const body = await res.json();
-    return { status: 402, requirements: body };
-  }
-
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Spotlight failed: ${res.status} ${body}`);
-  }
-
-  return { status: 200, data: await res.json() };
 }

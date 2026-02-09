@@ -1,7 +1,7 @@
 import { x402Client, x402HTTPClient } from "@x402/core/client";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
 import { privateKeyToAccount } from "viem/accounts";
-import { fetchEstimate, postSpotlight } from "../api.js";
+import { fetchEstimate, postSpotlightRaw } from "../api.js";
 
 export async function post(opts) {
   const privateKey = opts.privateKey || process.env.PRIVATE_KEY;
@@ -25,80 +25,81 @@ export async function post(opts) {
     console.log(`   Estimated Cost: $${est.estimatedUSDC} USDC`);
     console.log(`   Available: ${est.spotlightAvailable ? "Yes" : "No"}\n`);
 
-    // Step 1: POST without payment to get 402 requirements
+    if (!est.spotlightAvailable) {
+      console.log(`   ⚠️  Spotlight is currently guaranteed. ${Math.ceil(est.spotlightRemainingSeconds / 60)} min remaining.`);
+    }
+
+    // Step 1: POST without payment to get 402 response
     console.log("1️⃣  Getting payment requirements...");
-    const initial = await postSpotlight({
+    const res402 = await postSpotlightRaw({
       url,
       guaranteeHours: hours,
       baseUrl: opts.baseUrl,
     });
 
-    if (initial.status !== 402) {
-      console.log("✅ Posted (no payment was required):", initial.data);
+    if (res402.status !== 402) {
+      if (res402.ok) {
+        console.log("✅ Posted (no payment was required):", await res402.json());
+      } else {
+        console.error("❌ Unexpected response:", res402.status, await res402.text());
+      }
       return;
     }
 
-    const requirements = initial.requirements;
-    const accepts = requirements.accepts?.[0];
-    if (!accepts) {
-      console.error("❌ No payment requirements returned.");
-      process.exit(1);
-    }
-
-    console.log(`   Price: $${accepts.amount} USDC`);
-    console.log(`   Pay to: ${accepts.payTo}`);
-    console.log(`   Network: ${accepts.network}\n`);
-
-    // Step 2: Create x402 payment via proper client
-    console.log("2️⃣  Creating x402 payment...");
+    // Parse 402 using x402 HTTP client
     const account = privateKeyToAccount(privateKey);
-    console.log(`   Signer: ${account.address}`);
-
     const client = new x402Client();
     registerExactEvmScheme(client, { signer: account });
     const httpClient = new x402HTTPClient(client);
 
-    // Reconstruct payment required response from our parsed data
+    const body402 = await res402.json();
     const paymentRequired = httpClient.getPaymentRequiredResponse(
-      (name) => {
-        if (name.toLowerCase() === "x-402-version") return String(requirements.x402Version);
-        return null;
-      },
-      requirements
+      (name) => res402.headers.get(name),
+      body402
     );
 
+    const accepts = paymentRequired.accepts?.[0];
+    console.log(`   Price: $${accepts?.amount} USDC`);
+    console.log(`   Pay to: ${accepts?.payTo}`);
+    console.log(`   Network: ${accepts?.network}\n`);
+
+    // Step 2: Create x402 payment signature
+    console.log("2️⃣  Creating x402 payment signature...");
+    console.log(`   Signer: ${account.address}`);
+
     const paymentPayload = await httpClient.createPaymentPayload(paymentRequired);
-    const headers = httpClient.encodePaymentSignatureHeader(paymentPayload);
+    const paymentHeaders = httpClient.encodePaymentSignatureHeader(paymentPayload);
 
     if (simulate) {
-      console.log("\n🔍 SIMULATE MODE — would send with these headers:");
-      for (const [k, v] of Object.entries(headers)) {
-        console.log(`   ${k}: ${v.slice(0, 80)}...`);
-      }
+      console.log("\n🔍 SIMULATE MODE — payment signed successfully!");
+      console.log("   Payment payload created and encoded.");
+      console.log("   Would submit with payment headers to execute spotlight placement.");
       console.log("\n✅ Simulation complete. No payment submitted.\n");
       return;
     }
 
     // Step 3: Submit with payment
     console.log("\n3️⃣  Submitting with payment...");
-    const result = await postSpotlight({
+    const resPost = await postSpotlightRaw({
       url,
       guaranteeHours: hours,
-      paymentHeader: headers["X-402"] || headers["PAYMENT-SIGNATURE"] || Object.values(headers)[0],
+      headers: paymentHeaders,
       baseUrl: opts.baseUrl,
     });
 
-    if (result.status === 402) {
-      console.error("❌ Payment rejected:", result.requirements.error || "Unknown error");
+    if (!resPost.ok) {
+      const err = await resPost.json().catch(() => ({ error: `HTTP ${resPost.status}` }));
+      console.error("❌ Payment rejected:", err.error || JSON.stringify(err));
       process.exit(1);
     }
 
+    const result = await resPost.json();
     console.log("\n✅ Spotlight posted!");
-    console.log(`   TX: ${result.data.txHash}`);
-    console.log(`   Block: ${result.data.blockNumber}`);
-    console.log(`   USDC Spent: $${result.data.usdcSpent}`);
-    console.log(`   URL: ${result.data.url}`);
-    console.log(`   Guarantee: ${result.data.guaranteeHours}h\n`);
+    console.log(`   TX: ${result.txHash}`);
+    console.log(`   Block: ${result.blockNumber}`);
+    console.log(`   USDC Spent: $${result.usdcSpent}`);
+    console.log(`   URL: ${result.url}`);
+    console.log(`   Guarantee: ${result.guaranteeHours}h\n`);
   } catch (err) {
     console.error("❌", err.message);
     process.exit(1);
