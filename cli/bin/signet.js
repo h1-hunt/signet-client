@@ -7,7 +7,7 @@ import { estimate } from "../src/commands/estimate.js";
 program
   .name("signet")
   .description("Signet — onchain advertising CLI")
-  .version("0.1.0");
+  .version("0.2.0");
 
 program
   .command("list")
@@ -20,6 +20,7 @@ program
   .command("estimate")
   .description("Estimate USDC cost for spotlight placement")
   .option("-h, --hours <number>", "Guarantee hours (0-24)", "0")
+  .option("--simulate", "Simulate mode (same as normal for estimate)")
   .option("--base-url <url>", "Signet API base URL", "https://signet.sebayaki.com")
   .action(estimate);
 
@@ -29,6 +30,7 @@ program
   .requiredOption("-u, --url <url>", "URL to advertise")
   .option("-h, --hours <number>", "Guarantee hours (0-24)", "0")
   .option("-k, --private-key <key>", "Wallet private key (or set PRIVATE_KEY env)")
+  .option("--simulate", "Simulate: show estimate and payment requirements without posting")
   .option("--base-url <url>", "Signet API base URL", "https://signet.sebayaki.com")
   .action(post);
 

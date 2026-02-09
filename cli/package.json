@@ -1,18 +1,21 @@
 {
   "name": "signet-cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "CLI for Signet onchain advertising — list and post spotlight ads",
   "type": "module",
   "bin": {
-    "signet": "./bin/signet.js"
+    "signet": "./bin/signet.js",
+    "signet-cli": "./bin/signet.js"
   },
   "scripts": {
-    "start": "node bin/signet.js"
+    "start": "node bin/signet.js",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
+    "@x402/core": "^2.3.0",
+    "@x402/evm": "^2.3.0",
     "commander": "^13.0.0",
-    "viem": "^2.30.0",
-    "@x402/core": "^0.0.7"
+    "viem": "^2.30.0"
   },
   "engines": {
     "node": ">=18"

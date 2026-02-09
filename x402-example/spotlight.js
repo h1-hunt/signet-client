@@ -8,6 +8,8 @@
  *   PRIVATE_KEY=0xabc... node spotlight.js https://example.com 6
  */
 
+import { x402Client, x402HTTPClient } from "@x402/core/client";
+import { registerExactEvmScheme } from "@x402/evm/exact/client";
 import { privateKeyToAccount } from "viem/accounts";
 
 const SIGNET_API = "https://signet.sebayaki.com";
@@ -56,32 +58,27 @@ if (reqRes.status !== 402) {
   process.exit(1);
 }
 
-const paymentRequired = await reqRes.json();
-const accepts = paymentRequired.accepts[0];
+const paymentRequired402 = await reqRes.json();
+const accepts = paymentRequired402.accepts[0];
 console.log(`  Amount: $${accepts.amount} USDC`);
 console.log(`  Pay to: ${accepts.payTo}\n`);
 
-// Step 3: Create payment signature
-// NOTE: In production, use @x402/evm to create a proper Permit2 signature.
-// This example shows the protocol flow. A real implementation needs:
-//   1. USDC balance on Base
-//   2. Permit2 approval
-//   3. EIP-712 typed signature
-console.log("→ Creating payment signature...");
-const payload = {
-  x402Version: paymentRequired.x402Version,
-  scheme: accepts.scheme,
-  network: accepts.network,
-  asset: accepts.asset,
-  amount: accepts.amount,
-  payTo: accepts.payTo,
-  from: account.address,
-  maxTimeoutSeconds: accepts.maxTimeoutSeconds,
-  deadline: Math.floor(Date.now() / 1000) + 300,
-  nonce: `0x${Date.now().toString(16)}`,
-};
+// Step 3: Create proper x402 payment signature
+console.log("→ Creating x402 payment signature...");
+const client = new x402Client();
+registerExactEvmScheme(client, { signer: account });
+const httpClient = new x402HTTPClient(client);
 
-const paymentHeader = Buffer.from(JSON.stringify(payload)).toString("base64");
+const paymentRequired = httpClient.getPaymentRequiredResponse(
+  (name) => {
+    if (name.toLowerCase() === "x-402-version") return String(paymentRequired402.x402Version);
+    return null;
+  },
+  paymentRequired402
+);
+
+const paymentPayload = await httpClient.createPaymentPayload(paymentRequired);
+const paymentHeaders = httpClient.encodePaymentSignatureHeader(paymentPayload);
 
 // Step 4: Submit with payment
 console.log("→ Submitting spotlight placement...\n");
@@ -89,7 +86,7 @@ const postRes = await fetch(`${SIGNET_API}/api/x402/spotlight`, {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    "PAYMENT-SIGNATURE": paymentHeader,
+    ...paymentHeaders,
   },
   body: JSON.stringify({ url: targetUrl, guaranteeHours }),
 });

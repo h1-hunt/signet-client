@@ -6,7 +6,7 @@ export async function estimate(opts) {
   try {
     const data = await fetchEstimate(hours, opts.baseUrl);
 
-    console.log(`\n💰 Signet Spotlight Estimate\n`);
+    console.log(`\n💰 Signet Spotlight Estimate${opts.simulate ? " (SIMULATE)" : ""}\n`);
     console.log(`  Guarantee Hours: ${data.guaranteeHours}`);
     console.log(`  Estimated Cost:  $${data.estimatedUSDC} USDC`);
     console.log(`  Spotlight Available: ${data.spotlightAvailable ? "✅ Yes" : "❌ No"}`);
