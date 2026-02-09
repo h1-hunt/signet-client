@@ -1,7 +1,8 @@
 import { x402Client, x402HTTPClient } from "@x402/core/client";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
 import { privateKeyToAccount } from "viem/accounts";
-import { fetchEstimate, postSpotlightRaw } from "../api.js";
+import { estimateUSDC, getSpotlightStatus } from "../contract.js";
+import { postSpotlightRaw } from "../api.js";
 
 export async function post(opts) {
   const privateKey = opts.privateKey || process.env.PRIVATE_KEY;
@@ -19,14 +20,17 @@ export async function post(opts) {
   console.log(`   Guarantee: ${hours}h\n`);
 
   try {
-    // Step 0: Get estimate
-    console.log("0️⃣  Fetching estimate...");
-    const est = await fetchEstimate(hours, opts.baseUrl);
-    console.log(`   Estimated Cost: $${est.estimatedUSDC} USDC`);
-    console.log(`   Available: ${est.spotlightAvailable ? "Yes" : "No"}\n`);
+    // Step 0: Get estimate from chain
+    console.log("0️⃣  Fetching estimate (on-chain)...");
+    const [priceData, spotlight] = await Promise.all([
+      estimateUSDC(hours),
+      getSpotlightStatus(),
+    ]);
+    console.log(`   Estimated Cost: $${priceData.estimatedUSDC} USDC`);
+    console.log(`   Available: ${spotlight.spotlightAvailable ? "Yes" : "No"}\n`);
 
-    if (!est.spotlightAvailable) {
-      console.log(`   ⚠️  Spotlight is currently guaranteed. ${Math.ceil(est.spotlightRemainingSeconds / 60)} min remaining.`);
+    if (!spotlight.spotlightAvailable) {
+      console.log(`   ⚠️  Spotlight is currently guaranteed. ${Math.ceil(spotlight.spotlightRemainingSeconds / 60)} min remaining.`);
     }
 
     // Step 1: POST without payment to get 402 response

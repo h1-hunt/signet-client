@@ -1,18 +1,21 @@
-import { fetchEstimate } from "../api.js";
+import { estimateUSDC, getSpotlightStatus } from "../contract.js";
 
 export async function estimate(opts) {
   const hours = parseInt(opts.hours);
 
   try {
-    const data = await fetchEstimate(hours, opts.baseUrl);
+    const [priceData, spotlight] = await Promise.all([
+      estimateUSDC(hours),
+      getSpotlightStatus(),
+    ]);
 
-    console.log(`\n💰 Signet Spotlight Estimate${opts.simulate ? " (SIMULATE)" : ""}\n`);
-    console.log(`  Guarantee Hours: ${data.guaranteeHours}`);
-    console.log(`  Estimated Cost:  $${data.estimatedUSDC} USDC`);
-    console.log(`  Spotlight Available: ${data.spotlightAvailable ? "✅ Yes" : "❌ No"}`);
+    console.log(`\n💰 Signet Spotlight Estimate\n`);
+    console.log(`  Guarantee Hours: ${hours}`);
+    console.log(`  Estimated Cost:  $${priceData.estimatedUSDC} USDC`);
+    console.log(`  Spotlight Available: ${spotlight.spotlightAvailable ? "✅ Yes" : "❌ No"}`);
 
-    if (data.spotlightRemainingSeconds > 0) {
-      const mins = Math.ceil(data.spotlightRemainingSeconds / 60);
+    if (spotlight.spotlightRemainingSeconds > 0) {
+      const mins = Math.ceil(spotlight.spotlightRemainingSeconds / 60);
       console.log(`  Current Guarantee Remaining: ${mins} min`);
     }
 
