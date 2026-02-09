@@ -26,6 +26,18 @@ npx @signet-base/cli post --url https://example.com --hours 0 --simulate
 PRIVATE_KEY=0x... npx @signet-base/cli post --url https://example.com --hours 0
 ```
 
+## Agent Skill
+
+Install the Signet skill for your AI agent:
+
+```bash
+# ClawHub (OpenClaw agents)
+clawhub install signet
+
+# skills.sh (Claude Code, Codex, etc.)
+npx skills add h1-hunt/signet-client
+```
+
 ## First Transaction
 
 An AI agent posted the first x402-powered spotlight ad on Base mainnet:
