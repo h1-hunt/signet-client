@@ -1,0 +1,87 @@
+{
+  "type": "stdio",
+  "runtime": "node",
+  "hasAuthAdapter": false,
+  "serverCard": {
+    "serverInfo": {
+      "name": "signet",
+      "version": "0.1.0"
+    },
+    "tools": [
+      {
+        "name": "signet_estimate",
+        "description": "Estimate the USDC cost to place a spotlight ad on Signet (Base). Returns price and availability.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "guaranteeHours": {
+              "default": 0,
+              "description": "Hours of guaranteed spotlight placement (0-24)",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 24
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "signet_post",
+        "description": "Post a URL to the Signet spotlight by paying USDC on Base via x402. Requires SIGNET_PRIVATE_KEY env var.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "description": "URL to promote on the spotlight"
+            },
+            "guaranteeHours": {
+              "default": 0,
+              "description": "Hours of guaranteed spotlight placement (0-24)",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 24
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      },
+      {
+        "name": "signet_list",
+        "description": "List recent spotlight ads on Signet with view/click stats.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "count": {
+              "default": 5,
+              "description": "Number of recent ads to show (1-10)",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "execution": {
+          "taskSupport": "forbidden"
+        }
+      }
+    ],
+    "resources": [],
+    "prompts": []
+  },
+  "source": {
+    "commit": "27eaa8eb8ecb3918e2f6fdee9b72e648da844941",
+    "branch": "main"
+  }
+}

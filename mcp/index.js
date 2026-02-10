@@ -56,12 +56,22 @@ function formatUSDC(amount) {
 
 // --- Create MCP Server ---
 
-const server = new McpServer({
-  name: "signet",
-  version: "0.1.0",
-});
+function createServer() {
+  const srv = new McpServer({
+    name: "signet",
+    version: "0.1.0",
+  });
 
-// --- Tool: estimate ---
+  registerTools(srv);
+  return srv;
+}
+
+// Export for Smithery sandbox scanning
+export function createSandboxServer() {
+  return createServer();
+}
+
+function registerTools(server) {
 
 server.tool(
   "signet_estimate",
@@ -369,7 +379,14 @@ function formatSignatureList(signatures) {
   };
 }
 
+} // end registerTools
+
 // --- Start server ---
 
-const transport = new StdioServerTransport();
-await server.connect(transport);
+async function main() {
+  const server = createServer();
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+}
+
+main().catch(console.error);

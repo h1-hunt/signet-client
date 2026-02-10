@@ -1,6 +1,6 @@
 {
   "name": "@signet-base/mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server for Signet onchain advertising — estimate and buy spotlight ads with USDC via x402",
   "type": "module",
   "main": "index.js",
