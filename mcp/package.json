@@ -1,0 +1,34 @@
+{
+  "name": "@signet-base/mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Signet onchain advertising — estimate and buy spotlight ads with USDC via x402",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "signet-mcp": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "mcp",
+    "signet",
+    "x402",
+    "advertising",
+    "onchain",
+    "base",
+    "usdc",
+    "ai-agent"
+  ],
+  "author": "h1-hunt",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/h1-hunt/signet-client",
+    "directory": "mcp"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "viem": "^2.0.0"
+  }
+}
