@@ -36,7 +36,7 @@ program
   .command("sign")
   .description("Sign on Signet by paying directly on-chain (bypassing x402)")
   .requiredOption("-u, --url <url>", "URL to advertise")
-  .requiredOption("-h, --hours <number>", "Guarantee hours (1-24)")
+  .requiredOption("-h, --hours <number>", "Guarantee hours (0-24)")
   .option("-t, --token <token>", "Token to use (eth|usdc|mt|hunt|auto)", "auto")
   .option("-k, --private-key <key>", "Wallet private key (or set PRIVATE_KEY env)")
   .option("--slippage <percent>", "Slippage tolerance percentage", "5")

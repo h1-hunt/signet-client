@@ -27,8 +27,8 @@ export async function sign(opts) {
   const guaranteeHours = parseInt(hours);
   const slippage = parseFloat(slippageOpt || 5);
   
-  if (guaranteeHours < 1 || guaranteeHours > 24) {
-    console.error("❌ Hours must be between 1 and 24");
+  if (guaranteeHours < 0 || guaranteeHours > 24) {
+    console.error("❌ Hours must be between 0 and 24");
     process.exit(1);
   }
 
