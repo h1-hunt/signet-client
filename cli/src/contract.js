@@ -295,4 +295,4 @@ export async function getTokenAllowance(token, owner, spender) {
 }
 
 // Export constants for use in other files
-export { TOKEN_MAP, TOKEN_DECIMALS, ZAP_V2_ABI, ERC20_ABI, ZAP_CONTRACT };
+export { TOKEN_MAP, TOKEN_DECIMALS, ZAP_V2_ABI, ERC20_ABI, ZAP_CONTRACT, BASE_RPC_ENDPOINTS };

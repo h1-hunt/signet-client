@@ -1,8 +1,7 @@
-import { createWalletClient, http, formatUnits, parseUnits, decodeEventLog } from "viem";
+import { createWalletClient, http, fallback, formatUnits, decodeEventLog, publicActions } from "viem";
 import { base } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { 
-  getClient, 
   estimateSignZap, 
   getTokenBalance, 
   getTokenAllowance,
@@ -10,13 +9,20 @@ import {
   TOKEN_DECIMALS, 
   ZAP_V2_ABI, 
   ERC20_ABI, 
-  ZAP_CONTRACT 
+  ZAP_CONTRACT,
+  BASE_RPC_ENDPOINTS,
 } from "../contract.js";
 
 const MAX_UINT256 = 2n ** 256n - 1n;
 
+function applySlippage(amount, slippagePercent) {
+  // Use BigInt math to avoid precision loss: amount * (100 + slippage) / 100
+  return (amount * BigInt(Math.round((100 + slippagePercent) * 100))) / 10000n;
+}
+
 export async function sign(opts) {
-  const { url, hours, token: tokenOpt, privateKey, slippage: slippageOpt } = opts;
+  const { url, hours, token: tokenOpt, slippage: slippageOpt } = opts;
+  const privateKey = opts.privateKey || process.env.PRIVATE_KEY;
   
   const guaranteeHours = parseInt(hours);
   const slippage = parseFloat(slippageOpt || 5);
@@ -36,10 +42,11 @@ export async function sign(opts) {
     const walletClient = createWalletClient({
       account,
       chain: base,
-      transport: http(),
-    });
-    // Extend with publicActions for reading
-    walletClient.extend(() => getClient());
+      transport: fallback(
+        BASE_RPC_ENDPOINTS.map(url => http(url, { timeout: 30_000, retryCount: 1 })),
+        { rank: false }
+      ),
+    }).extend(publicActions);
 
     console.log(`\n🚀 Signing on Signet\n`);
     console.log(`  URL: ${url}`);
@@ -73,9 +80,8 @@ export async function sign(opts) {
     const tokenDecimals = TOKEN_DECIMALS[selectedToken];
     const estimatedAmount = estimate.fromTokenAmount;
     
-    // Add slippage buffer
-    const slippageMultiplier = (100 + slippage) / 100;
-    const maxFromTokenAmount = BigInt(Math.ceil(Number(estimatedAmount) * slippageMultiplier));
+    // Add slippage buffer (BigInt-safe)
+    const maxFromTokenAmount = applySlippage(estimatedAmount, slippage);
     
     console.log(`  Estimated cost: ${formatUnits(estimatedAmount, tokenDecimals)} ${selectedToken.toUpperCase()}`);
     console.log(`  Max amount (with ${slippage}% slippage): ${formatUnits(maxFromTokenAmount, tokenDecimals)} ${selectedToken.toUpperCase()}`);
@@ -187,9 +193,8 @@ async function selectBestToken(walletAddress, guaranteeHours, slippage) {
       const estimate = await estimateSignZap(tokenAddress, guaranteeHours);
       const estimatedAmount = estimate.fromTokenAmount;
       
-      // Apply slippage buffer
-      const slippageMultiplier = (100 + slippage) / 100;
-      const requiredAmount = BigInt(Math.ceil(Number(estimatedAmount) * slippageMultiplier));
+      // Apply slippage buffer (BigInt-safe)
+      const requiredAmount = applySlippage(estimatedAmount, slippage);
       
       if (balance >= requiredAmount) {
         return { token, address: tokenAddress };
