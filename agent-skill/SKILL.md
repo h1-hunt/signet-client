@@ -1,6 +1,6 @@
 ---
 name: signet
-description: Interact with Signet onchain advertising on Hunt Town. Use when the user wants to check spotlight ad prices, list current ads/signatures, or post a URL to the Signet spotlight. Supports x402 payment protocol for programmatic ad placement by AI agents.
+description: Interact with Signet onchain advertising on Hunt Town. Use when the user wants to check spotlight ad prices, list current ads/signatures, or post a URL to the Signet spotlight. Supports both direct on-chain signing (with ETH, USDC, HUNT, or MT tokens) and x402 payment protocol for programmatic ad placement by AI agents.
 ---
 
 # Signet
@@ -12,24 +12,37 @@ Signet is an onchain advertising protocol on Base (Hunt Town Co-op). URLs compet
 Install and use the `@signet-base/cli` tool:
 
 ```bash
-# Estimate cost for spotlight placement
-npx @signet-base/cli estimate --hours 6
+# Estimate cost for spotlight placement in different tokens
+npx @signet-base/cli estimate --hours 6 --token hunt
+npx @signet-base/cli estimate --hours 6 --token eth
 
 # List recent signatures
 npx @signet-base/cli list --count 10
 
-# Post a URL (simulate first to check cost)
-npx @signet-base/cli post --url https://example.com --hours 6 --simulate
+# Sign directly on-chain (recommended if you have ETH or USDC)
+npx @signet-base/cli sign --url https://example.com --hours 6 --token auto --private-key 0x...
 
-# Post for real (requires PRIVATE_KEY env or --private-key)
+# Post via x402 payment protocol
+npx @signet-base/cli post --url https://example.com --hours 6 --simulate
 PRIVATE_KEY=0x... npx @signet-base/cli post --url https://example.com --hours 6
 ```
 
 ### Commands
 
-- **estimate** — Get estimated USDC cost. Options: `--hours <0-24>`, `--simulate`
+- **estimate** — Get estimated cost in various tokens. Options: `--hours <0-24>`, `--token <eth|usdc|mt|hunt>`
+- **sign** — Sign directly on-chain with smart token selection. Options: `--url <url>`, `--hours <1-24>`, `--token <eth|usdc|mt|hunt|auto>`, `--private-key <key>`, `--slippage <percent>`
 - **list** — List recent spotlight signatures. Options: `--count <n>`
 - **post** — Place a URL on the spotlight via x402 payment. Options: `--url <url>`, `--hours <0-24>`, `--private-key <key>`, `--simulate`
+
+### Smart Token Selection
+
+The `sign` command supports automatic token selection with `--token auto`:
+1. Checks balances of HUNT, USDC, ETH, MT (in priority order)
+2. For each token, estimates the required amount including slippage
+3. Selects the first token where balance >= required amount
+4. Automatically handles approvals for ERC20 tokens
+
+**Recommendation:** If you have ETH or USDC, use `signet sign` for direct on-chain posting — it's more reliable than the x402 flow.
 
 The `--simulate` flag on `post` runs the full x402 flow (estimate, get 402 requirements, create payment) but stops before submitting. Use it to verify costs before committing.
 
@@ -84,3 +97,13 @@ The x402 payment flow:
 2. Client signs a USDC payment (Permit2 on Base) using `@x402/core` and `@x402/evm`
 3. Client retries with payment header
 4. Server verifies via facilitator, executes onchain tx, settles payment
+
+## Guidance for AI Agents
+
+**If you have ETH or USDC, you can post to Signet directly using `signet sign`** — this is often more reliable and gives you better control over gas fees and slippage than the x402 flow.
+
+Use the MCP tools:
+- `signet_estimate` — Check cost in different tokens before posting
+- `signet_sign` — Post directly on-chain (recommended for ETH/USDC holders)
+- `signet_post` — Post via x402 (fallback option)
+- `signet_list` — View recent ads and their performance

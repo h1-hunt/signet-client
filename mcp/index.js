@@ -75,7 +75,7 @@ function registerTools(server) {
 
 server.tool(
   "signet_estimate",
-  "Estimate the USDC cost to place a spotlight ad on Signet (Base). Returns price and availability.",
+  "Estimate the cost to place a spotlight ad on Signet (Base) in various tokens. Returns price and availability.",
   {
     guaranteeHours: z
       .number()
@@ -84,42 +84,169 @@ server.tool(
       .max(24)
       .default(0)
       .describe("Hours of guaranteed spotlight placement (0-24)"),
+    token: z
+      .enum(["eth", "usdc", "mt", "hunt"])
+      .default("hunt")
+      .describe("Token to estimate cost in (eth|usdc|mt|hunt)"),
   },
-  async ({ guaranteeHours }) => {
-    const url = `${SIGNET_BASE_URL}/api/x402/estimate?guaranteeHours=${guaranteeHours}`;
-    const res = await fetch(url);
+  async ({ guaranteeHours, token }) => {
+    // For backward compatibility, still support USDC via API
+    if (token === "usdc") {
+      const url = `${SIGNET_BASE_URL}/api/x402/estimate?guaranteeHours=${guaranteeHours}`;
+      const res = await fetch(url);
 
-    if (!res.ok) {
+      if (!res.ok) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error: Signet API returned ${res.status}: ${await res.text()}`,
+            },
+          ],
+        };
+      }
+
+      const data = await res.json();
+      const availability = data.spotlightAvailable
+        ? "Available now"
+        : `Occupied (${Math.ceil(data.spotlightRemainingSeconds / 60)}min remaining)`;
+
       return {
         content: [
           {
             type: "text",
-            text: `Error: Signet API returned ${res.status}: ${await res.text()}`,
+            text: [
+              `Signet Spotlight Estimate`,
+              `• Cost: $${data.estimatedUSDC} USDC`,
+              `• Guarantee: ${guaranteeHours}h`,
+              `• Spotlight: ${availability}`,
+              ``,
+              `To post an ad, use signet_post (x402) or signet_sign (direct on-chain).`,
+            ].join("\n"),
           },
         ],
       };
     }
 
-    const data = await res.json();
-    const availability = data.spotlightAvailable
-      ? "Available now"
-      : `Occupied (${Math.ceil(data.spotlightRemainingSeconds / 60)}min remaining)`;
+    // For other tokens, use the CLI estimate command
+    try {
+      const { exec } = await import("child_process");
+      const { promisify } = await import("util");
+      const execAsync = promisify(exec);
 
-    return {
-      content: [
-        {
-          type: "text",
-          text: [
-            `Signet Spotlight Estimate`,
-            `• Cost: $${data.estimatedUSDC} USDC`,
-            `• Guarantee: ${guaranteeHours}h`,
-            `• Spotlight: ${availability}`,
-            ``,
-            `To post an ad, use the signet_post tool with a URL.`,
-          ].join("\n"),
-        },
-      ],
-    };
+      const result = await execAsync(
+        `cd /tmp && npx @signet-base/cli estimate --hours ${guaranteeHours} --token ${token}`,
+        { timeout: 30000 }
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: [
+              `Signet Spotlight Estimate`,
+              result.stdout.trim(),
+              ``,
+              `To post an ad, use signet_sign with the same token.`,
+            ].join("\n"),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error running estimate: ${error.message}`,
+          },
+        ],
+      };
+    }
+  }
+);
+
+// --- Tool: sign ---
+
+server.tool(
+  "signet_sign",
+  "Sign on Signet by paying directly on-chain with ETH, USDC, HUNT, or MT tokens. Bypasses x402 protocol for direct blockchain interaction.",
+  {
+    url: z.string().url().describe("URL to promote on the spotlight"),
+    hours: z
+      .number()
+      .int()
+      .min(1)
+      .max(24)
+      .describe("Hours of guaranteed spotlight placement (1-24)"),
+    token: z
+      .enum(["eth", "usdc", "mt", "hunt", "auto"])
+      .default("auto")
+      .describe("Token to pay with. 'auto' selects best available token."),
+    privateKey: z
+      .string()
+      .optional()
+      .describe("Private key (without 0x prefix). If not provided, uses environment variables."),
+    slippage: z
+      .number()
+      .min(0)
+      .max(50)
+      .default(5)
+      .describe("Slippage tolerance percentage (0-50)"),
+  },
+  async ({ url: targetUrl, hours, token, privateKey, slippage }) => {
+    const finalPrivateKey = privateKey || getPrivateKey();
+    
+    if (!finalPrivateKey) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Error: No private key provided. Set SIGNET_PRIVATE_KEY, BASE_PRIVATE_KEY, or EVM_PRIVATE_KEY environment variable, or provide privateKey parameter.",
+          },
+        ],
+      };
+    }
+
+    try {
+      const { exec } = await import("child_process");
+      const { promisify } = await import("util");
+      const execAsync = promisify(exec);
+
+      const cmd = [
+        "npx @signet-base/cli sign",
+        `--url "${targetUrl}"`,
+        `--hours ${hours}`,
+        `--token ${token}`,
+        `--private-key ${finalPrivateKey}`,
+        `--slippage ${slippage}`,
+      ].join(" ");
+
+      const result = await execAsync(cmd, { 
+        timeout: 120000, // 2 minute timeout for blockchain operations
+        cwd: "/tmp"
+      });
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: [
+              `Signet Sign Result:`,
+              result.stdout.trim(),
+            ].join("\n"),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error: ${error.message || error.stderr || String(error)}`,
+          },
+        ],
+      };
+    }
   }
 );
 
